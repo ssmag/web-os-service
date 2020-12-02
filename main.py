@@ -10,10 +10,16 @@ def main():
     tHandler = ThreadHandler()
     tHandler.set_function(cHelper.start_connection)
     tHandler.start()
-    tHandler2 = ThreadHandler()
-    tHandler2.set_function(check_registration)
-    tHandler2.start()
+    tHandler.set_function(check_registration, cHelper)
+    tHandler.start()
+    tHandler.set_function(list_threads, tHandler)
+    tHandler.start()
 
+def list_threads(tHandler):
+    while (True):
+        print(tHandler.get_thread_list())
+        time.sleep(5)
+        
 def check_registration(cHelper):
     while (True):
         if (cHelper.registered):
