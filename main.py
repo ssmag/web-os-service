@@ -1,31 +1,51 @@
 #!/usr/bin/env python3
 
 import time
-from clienthelper import ClientHelper
-from threadhandler import ThreadHandler
+from pywebostv.discovery import *
+from pywebostv.connection import *
+from pywebostv.controls import *
+from flask import Flask, request
+from string import Template
 
+app = Flask(__name__)
 
 def main():
-    cHelper = ClientHelper()
-    tHandler = ThreadHandler()
-    tHandler.set_function(cHelper.start_connection)
-    tHandler.start()
-    tHandler.set_function(check_registration, cHelper)
-    tHandler.start()
-    tHandler.set_function(list_threads, tHandler)
-    tHandler.start()
+    store = {}
+    client = WebOSClient("10.0.0.117")
+    client.connect()
+    print("Connecting to client..")
+    try:
+        for status in client.register(store):
+            if status == WebOSClient.PROMPTED:
+                print("Please accept connection on the TV")
+            elif status == WebOSClient.REGISTERED:
+                print("Registration successful!")
+                system = SystemControl(client)
+                system.notify("HAI PEPONI")
 
-def list_threads(tHandler):
-    while (True):
-        print(tHandler.get_thread_list())
-        time.sleep(5)
-        
-def check_registration(cHelper):
-    while (True):
-        if (cHelper.registered):
-            print("registered")
-            time.sleep(1)
+                #TODO: Move inp and client into class 
+                inp = InputControl(client)
+                print(inp)
+                print("input controller started")
+                app.run(debug=True)
+    except Exception:
+        print("TIMEOUT SYSTEM")
 
+app.route('/')
+def index():
+    return 'index'
 
-if __name__ == "__main__":
+@app.route("/webos", methods=['POST'])
+def keystroke():
+    data = request.form
+    print(data)
+    uinput = data["uinput"]
+    print(uinput)
+    t = Template('{ "uinput" : "${keystroke}" }').substitute(keystroke=uinput)
+    inp.type(uinput)
+    inp.enter()
+    print(str(t))
+    return str(t)
+
+if __name__ == '__main__':
     main()
